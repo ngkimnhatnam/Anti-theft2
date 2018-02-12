@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import serial
 import pynmea2
 import math
@@ -11,10 +12,14 @@ coord2=[]                       #Coordinate list of guarding mode
 collected_dist=[]
 buzzer=40                       #Position of buzzer signal pin on Pi
 buttonPin = 11                  #Position of button signal pin on Pi
+buttonPin2=37
 buzzer_parameter=[]
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(buzzer, GPIO.OUT)
 GPIO.setup(buttonPin,GPIO.IN, pull_up_down=GPIO.PUD_UP)#Button status now ON
+GPIO.setup(buttonPin2,GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.add_event_detect(buttonPin,GPIO.FALLING)
+GPIO.add_event_detect(buttonPin2,GPIO.FALLING)
 GPIO.setwarnings(False)
 
 def trailing_mode(): #Calculate total distance travelled so far
@@ -82,14 +87,14 @@ def haversine(lon1,lat1,lon2,lat2): #Haversine formula to calculate distance bet
 
 def guarding_mode(): #Calculate total distance travelled so far
         
-        while GPIO.input(buttonPin)==0:
+        while GPIO.input(buttonPin2)==1:
 
                 if len(coord2)<4:
                         current_location2()
                 
                 elif len(coord2)==4:
                         haversine_frompos0(coord2[0],coord2[1],coord2[2],coord2[3])
-                        if buzzer_parameter[0]>3:
+                        if buzzer_parameter[0]>20:
                             buzzer()                         
                         del buzzer_parameter[:]
                         del coord2[2:4]
@@ -165,15 +170,18 @@ def buzzer():#Turn on buzzer with keyboard interrupt
             GPIO.output(40, GPIO.LOW)
 
 def main():
-        while GPIO.input(buttonPin)==1:
-                trailing_mode()
-        else:
-                guarding_mode()
+        while True:
+                if GPIO.event_detected(buttonPin2):
+                        trailing_mode()
+                        GPIO.remove_event_detect(buttonPin2)
+                        GPIO.add_event_detect(buttonPin2, GPIO.RISING)
+                elif GPIO.event_detected(buttonPin):
+                        guarding_mode()
+                        GPIO.remove_event_detect(buttonPin)
+                        GPIO.add_event_detect(buttonPin, GPIO.RISING)
 
 
 main()
-        
-
 
         
         
