@@ -45,24 +45,26 @@ GPIO.setwarnings(False)
 
 ts=time.time()
 st=datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-
+#f=open("BikingDistance.txt", "w+")#Create a txt file to write data to
 def trailing_mode(): #Calculate total distance travelled so far
-        f=open("BikingDistance.txt", "a+")#Create a txt file to write data to
+        #Create a txt file to write data to
+        
         greenOff()
         redOff()
         blue()
         while GPIO.input(buttonPin)==1:
-
+                
                 if len(coord1)<4:
                         current_location()
                 
                 elif len(coord1)==4:
+                        f=open("BikingDistance.txt", "a+")
                         haversine(coord1[0],coord1[1],coord1[2],coord1[3])
                         del coord1[0:2]
                         total_dist=round(sum(collected_dist),4)
                         f.writelines(st+" Total distance is: "+str(total_dist)+" km\n")
                         print ("Total distance travelled is: ",total_dist," km")
-                        
+                        f.close()
 
 def current_location(): #Get current location and append to list
         sentence=serialStream.readline()
@@ -76,7 +78,7 @@ def current_location(): #Get current location and append to list
                 coord1.append(la)
                 print ("Current location: {lat} North,{lon} East".format(lat=data.latitude, lon=data.longitude))
                 print (coord1)
-                time.sleep(5)
+                time.sleep(2)
                 
                 
 
@@ -123,7 +125,7 @@ def guarding_mode(): #Calculate total distance travelled so far
                 
                 elif len(coord2)==4:
                         haversine_frompos0(coord2[0],coord2[1],coord2[2],coord2[3])
-                        if buzzer_parameter[0]>3:
+                        if buzzer_parameter[0]>10:
                             greenOff()
                             blueOff()
                             buzzer()
@@ -234,7 +236,7 @@ def green():
 
 def main():
         while True:
-                trailing_mode()
+                #trailing_mode()
                 if GPIO.event_detected(buttonPin2):
                         trailing_mode()
                         GPIO.remove_event_detect(buttonPin2)
